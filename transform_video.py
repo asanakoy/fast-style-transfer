@@ -1,14 +1,16 @@
 from __future__ import print_function
 from argparse import ArgumentParser
 import sys
+
 sys.path.insert(0, 'src')
 import os, random, subprocess, evaluate, shutil
 from utils import exists, list_files
 import pdb
 
-TMP_DIR = '.fns_frames_%s/' % random.randint(0,99999)
+TMP_DIR = '.fns_frames_%s/' % random.randint(0, 99999)
 DEVICE = '/gpu:0'
 BATCH_SIZE = 4
+
 
 def build_parser():
     parser = ArgumentParser()
@@ -19,11 +21,11 @@ def build_parser():
     parser.add_argument('--in-path', type=str,
                         dest='in_path', help='in video path',
                         metavar='IN_PATH', required=True)
-    
+
     parser.add_argument('--out-path', type=str,
                         dest='out', help='path to save processed video to',
                         metavar='OUT', required=True)
-    
+
     parser.add_argument('--tmp-dir', type=str, dest='tmp_dir',
                         help='tmp dir for processing', metavar='TMP_DIR',
                         default=TMP_DIR)
@@ -33,7 +35,7 @@ def build_parser():
                         metavar='DEVICE', default=DEVICE)
 
     parser.add_argument('--batch-size', type=int,
-                        dest='batch_size',help='batch size for eval. default 4.',
+                        dest='batch_size', help='batch size for eval. default 4.',
                         metavar='BATCH_SIZE', default=BATCH_SIZE)
 
     parser.add_argument('--no-disk', type=bool, dest='no_disk',
@@ -41,9 +43,11 @@ def build_parser():
                         metavar='NO_DISK', default=False)
     return parser
 
+
 def check_opts(opts):
     exists(opts.checkpoint)
     exists(opts.out)
+
 
 def main():
     parser = build_parser()
@@ -71,7 +75,7 @@ def main():
         out_files = [os.path.join(out_dir, x) for x in base_names]
         evaluate.ffwd(in_files, out_files, opts.checkpoint, device_t=opts.device,
                       batch_size=opts.batch_size)
-        fr = 30 # wtf
+        fr = 30  # wtf
         out_args = [
             'ffmpeg',
             '-i', '%s/frame_%%d.png' % out_dir,
@@ -85,8 +89,7 @@ def main():
         subprocess.call(" ".join(out_args), shell=True)
         print('Video at: %s' % opts.out)
         shutil.rmtree(opts.tmp_dir)
- 
+
+
 if __name__ == '__main__':
     main()
-
-

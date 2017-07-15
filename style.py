@@ -1,8 +1,9 @@
 from __future__ import print_function
-import sys, os, pdb
-sys.path.insert(0, 'src')
-import numpy as np, scipy.misc 
-from optimize import optimize
+import os
+import pdb
+import numpy as np
+import scipy.misc
+from src.optimize import optimize
 from argparse import ArgumentParser
 from utils import save_img, get_img, exists, list_files
 import evaluate
