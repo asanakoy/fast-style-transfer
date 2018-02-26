@@ -22,6 +22,7 @@ BATCH_SIZE = 4
 DEVICE = '/gpu:0'
 FRAC_GPU = 1
 
+
 def build_parser():
     parser = ArgumentParser()
     parser.add_argument('--checkpoint-dir', type=str,
@@ -88,6 +89,7 @@ def build_parser():
 
     return parser
 
+
 def check_opts(opts):
     exists(opts.checkpoint_dir, "checkpoint dir not found!")
     exists(opts.style, "style path not found!")
@@ -105,6 +107,7 @@ def check_opts(opts):
     assert opts.tv_weight >= 0
     assert opts.learning_rate >= 0
 
+
 def _get_files(img_dir):
     files = list_files(img_dir)
     return [os.path.join(img_dir,x) for x in files]
@@ -113,9 +116,14 @@ def _get_files(img_dir):
 def main():
     parser = build_parser()
     options = parser.parse_args()
+    if not os.path.exists(options.checkpoint_dir):
+        os.makedirs(options.checkpoint_dir)
+    if not os.path.exists(options.test_dir):
+        os.makedirs(options.test_dir)
+
     check_opts(options)
 
-    style_target = get_img(options.style)
+    style_target = get_img(options.style, img_size=(512, 512))
     if not options.slow:
         content_targets = _get_files(options.train_path)
     elif options.test:
