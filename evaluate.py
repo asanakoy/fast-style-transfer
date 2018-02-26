@@ -1,5 +1,6 @@
 from __future__ import print_function
 from src import transform, vgg
+import glob
 import numpy as np
 import pdb, os
 import scipy.misc
@@ -125,15 +126,15 @@ def from_pipe(opts):
 
 
 # get img_shape
-def ffwd(data_in, paths_out, checkpoint_dir, device_t='/gpu:0', batch_size=4):
+def ffwd(data_in, paths_out, checkpoint_dir, device_t='/gpu:0', batch_size=4, image_size=None):
     assert len(paths_out) > 0
     is_paths = type(data_in[0]) == str
     if is_paths:
         assert len(data_in) == len(paths_out)
-        img_shape = get_img(data_in[0]).shape
+        img_shape = get_img(data_in[0], img_size=image_size).shape
     else:
         assert data_in.size[0] == len(paths_out)
-        img_shape = X[0].shape
+        img_shape = data_in[0].shape
 
     g = tf.Graph()
     batch_size = min(len(paths_out), batch_size)
@@ -166,7 +167,7 @@ def ffwd(data_in, paths_out, checkpoint_dir, device_t='/gpu:0', batch_size=4):
                 curr_batch_in = data_in[pos:pos + batch_size]
                 X = np.zeros(batch_shape, dtype=np.float32)
                 for j, path_in in enumerate(curr_batch_in):
-                    img = get_img(path_in)
+                    img = get_img(path_in, img_size=image_size)
                     assert img.shape == img_shape, \
                         'Images have different dimensions. ' + \
                         'Resize images or use --allow-different-dimensions.'
@@ -216,6 +217,9 @@ def build_parser():
                         help='dir or .ckpt file to load checkpoint from',
                         metavar='CHECKPOINT', required=True)
 
+    parser.add_argument('--name_suffix', type=str, default='',
+                        help='suffix to append to every generated image name',)
+
     parser.add_argument('--in-path', type=str,
                         dest='in_path', help='dir or file to transform',
                         metavar='IN_PATH', required=True)
@@ -224,6 +228,10 @@ def build_parser():
     parser.add_argument('--out-path', type=str,
                         dest='out_path', help=help_out, metavar='OUT_PATH',
                         required=True)
+
+    parser.add_argument('--img_size', type=int,
+                        help='resize content image to the size. Do not resize if None',
+                        default=None)
 
     parser.add_argument('--device', type=str,
                         dest='device', help='device to perform compute on',
@@ -251,6 +259,9 @@ def check_opts(opts):
 def main():
     parser = build_parser()
     opts = parser.parse_args()
+    if not os.path.isdir(opts.out_path):
+        os.makedirs(opts.out_path)
+
     check_opts(opts)
 
     if not os.path.isdir(opts.in_path):
@@ -263,15 +274,17 @@ def main():
         ffwd_to_img(opts.in_path, out_path, opts.checkpoint_dir,
                     device=opts.device)
     else:
-        files = list_files(opts.in_path)
-        full_in = [os.path.join(opts.in_path, x) for x in files]
-        full_out = [os.path.join(opts.out_path, x) for x in files]
+        full_in = glob.glob(os.path.join(opts.in_path, '*.jpg')) + \
+                  glob.glob(os.path.join(opts.in_path, '*.png'))
+        full_out = [os.path.join(opts.out_path,
+                                 '{}_stylized_{}.jpg'.format(os.path.basename(x)[:-4], opts.name_suffix)) for x in full_in]
+
         if opts.allow_different_dimensions:
             ffwd_different_dimensions(full_in, full_out, opts.checkpoint_dir,
                                       device_t=opts.device, batch_size=opts.batch_size)
         else:
             ffwd(full_in, full_out, opts.checkpoint_dir, device_t=opts.device,
-                 batch_size=opts.batch_size)
+                 batch_size=opts.batch_size, image_size=opts.img_size)
 
 
 if __name__ == '__main__':
