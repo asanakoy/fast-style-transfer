@@ -147,6 +147,7 @@ def ffwd(data_in, paths_out, checkpoint_dir, device_t='/gpu:0', batch_size=4):
                                          name='img_placeholder')
 
         preds = transform.net(img_placeholder)
+        print('Result tensor:', preds.name, preds)
         saver = tf.train.Saver()
         if os.path.isdir(checkpoint_dir):
             ckpt = tf.train.get_checkpoint_state(checkpoint_dir)
@@ -191,6 +192,9 @@ def ffwd_to_img(in_path, out_path, checkpoint_dir, device='/cpu:0'):
 
 def ffwd_different_dimensions(in_path, out_path, checkpoint_dir,
                               device_t=DEVICE, batch_size=4):
+    """
+    Predict on a list of images with different shapes
+    """
     in_path_of_shape = defaultdict(list)
     out_path_of_shape = defaultdict(list)
     for i in range(len(in_path)):
